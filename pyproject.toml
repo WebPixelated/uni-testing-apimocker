@@ -1,14 +1,13 @@
 [project]
 name = "testingapi"
 version = "0.1.0"
-description = ""
+description = "API test framework for apimocker.com — Layered Architecture, Allure, Loguru"
 authors = [
     {name = "Wild",email = "zoppoz4100@gmail.com"}
 ]
 requires-python = ">=3.13,<4.0"
 dependencies = [
     "pytest (>=9.0.2,<10.0.0)",
-    "pytest-playwright (>=0.7.2,<0.8.0)",
     "loguru (>=0.7.3,<0.8.0)",
     "allure-pytest (>=2.15.3,<3.0.0)",
     "pydantic (>=2.12.5,<3.0.0)",
