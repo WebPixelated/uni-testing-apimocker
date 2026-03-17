@@ -149,9 +149,9 @@ class TestPatchComment:
         new_body = f"Patched comment body {uuid.uuid4().hex[:8]}"
         response = api_client.patch_comment(created_comment["id"], {"body": new_body})
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code} with body: {response.text}"
-        )
+        assert (
+            response.status_code == 200
+        ), f"Expected 200, got {response.status_code} with body: {response.text}"
 
     @allure.title("PATCH /comments/{id} - works when all required fields are provided")
     def test_patch_comment_full_payload(

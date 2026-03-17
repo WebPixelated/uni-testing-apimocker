@@ -237,9 +237,9 @@ class TestPatchUser:
         new_name = f"Patched {uuid.uuid4().hex[:8]}"
         response = api_client.patch_user(created_user["id"], {"name": new_name})
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}. Bug in API?"
-        )
+        assert (
+            response.status_code == 200
+        ), f"Expected 200, got {response.status_code}. Bug in API?"
         user = api_client.data(response)
         assert user["name"] == new_name
         assert user["username"] == created_user["username"]  # Unchanged

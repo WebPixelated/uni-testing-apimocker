@@ -137,9 +137,9 @@ class TestPatchTodo:
     def test_patch_todo_status(self, api_client: MockApiClient, created_todo: dict):
         response = api_client.patch_todo(created_todo["id"], {"completed": True})
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code} with body: {response.text}"
-        )
+        assert (
+            response.status_code == 200
+        ), f"Expected 200, got {response.status_code} with body: {response.text}"
 
         assert response.status_code == 200
         todo = api_client.data(response)

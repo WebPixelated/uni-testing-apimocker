@@ -3,7 +3,7 @@ import pytest
 import allure
 
 from api.mock_api_client import MockApiClient
-from helpers import random_username, random_email_local, random_name
+from helpers import random_name
 
 
 def _post_payload() -> dict:
@@ -152,9 +152,9 @@ class TestPatchPost:
         # Try to update title only
         response = api_client.patch_post(created_post["id"], {"title": new_title})
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code} with body: {response.text}"
-        )
+        assert (
+            response.status_code == 200
+        ), f"Expected 200, got {response.status_code} with body: {response.text}"
 
     @allure.title("PATCH /posts/{id} - works when all required fields are provided")
     def test_patch_post_full_payload(
