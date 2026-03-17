@@ -3,6 +3,7 @@ import pytest
 import allure
 
 from api.mock_api_client import MockApiClient
+from helpers import random_name
 
 
 def _comment_payload() -> dict:
@@ -89,6 +90,31 @@ class TestCreateComment:
         response = api_client.create_comment(_comment_payload())
         assert "id" in api_client.data(response)
 
+    @allure.title("POST /comments - invalid email")
+    def test_create_comment_invalid_email(self, api_client: MockApiClient):
+        payload = _comment_payload()
+        payload["email"] = "invalid-email-format"
+        response = api_client.create_comment(payload)
+        assert response.status_code == 400
+        assert any(d.get("path") == "email" for d in response.json().get("details", []))
+
+    @allure.title("POST /comments - invalid postId (negative integer)")
+    def test_create_comment_invalid_post_id(self, api_client: MockApiClient):
+        payload = _comment_payload()
+        payload["postId"] = -5
+        response = api_client.create_comment(payload)
+        assert response.status_code == 400
+        assert any(
+            d.get("path") == "postId" for d in response.json().get("details", [])
+        )
+
+    @allure.title("POST /comments - body exceeds max length (1000 chars)")
+    def test_create_comment_body_too_long(self, api_client: MockApiClient):
+        payload = _comment_payload()
+        payload["body"] = random_name(1001)
+        response = api_client.create_comment(payload)
+        assert response.status_code == 400
+
 
 @allure.suite("Comments API")
 class TestUpdateComment:
@@ -107,6 +133,49 @@ class TestUpdateComment:
         payload = _comment_payload()
         response = api_client.update_comment(created_comment["id"], payload)
         assert api_client.data(response)["body"] == payload["body"]
+
+
+@allure.suite("Comments API")
+class TestPatchComment:
+    @allure.title(
+        "PATCH /comments/{id} - partial update (Expected to fail due to API bug)"
+    )
+    @pytest.mark.xfail(
+        reason="Bug on apimocker.com: PATCH acts like PUT and requires all fields"
+    )
+    def test_patch_comment_partial_update(
+        self, api_client: MockApiClient, created_comment: dict
+    ):
+        new_body = f"Patched comment body {uuid.uuid4().hex[:8]}"
+        response = api_client.patch_comment(created_comment["id"], {"body": new_body})
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code} with body: {response.text}"
+        )
+
+    @allure.title("PATCH /comments/{id} - works when all required fields are provided")
+    def test_patch_comment_full_payload(
+        self, api_client: MockApiClient, created_comment: dict
+    ):
+        new_body = f"Patched comment body {uuid.uuid4().hex[:8]}"
+
+        payload = {
+            "name": created_comment["name"],
+            "email": created_comment["email"],
+            "body": new_body,
+            "postId": created_comment["postId"],
+        }
+
+        response = api_client.patch_comment(created_comment["id"], payload)
+
+        if response.status_code == 404:
+            pytest.xfail(
+                "Bug on apimocker.com: PATCH returns 404 despite documentation"
+            )
+
+        assert response.status_code == 200
+        assert api_client.data(response)["body"] == new_body
+        assert api_client.data(response)["name"] == created_comment["name"]
 
 
 @allure.suite("Comments API")

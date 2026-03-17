@@ -3,6 +3,7 @@ import pytest
 import allure
 
 from api.mock_api_client import MockApiClient
+from helpers import random_username, random_email_local, random_name
 
 
 def _post_payload() -> dict:
@@ -86,6 +87,33 @@ class TestCreatePost:
         response = api_client.create_post(_post_payload())
         assert "id" in api_client.data(response)
 
+    @allure.title("POST /posts - missing required fields")
+    @pytest.mark.parametrize("missing_field", ["title", "body"])
+    def test_create_post_missing_fields(
+        self, api_client: MockApiClient, missing_field: str
+    ):
+        payload = _post_payload()
+        payload.pop(missing_field)
+        response = api_client.create_post(payload)
+        assert response.status_code == 400
+        assert any(
+            d.get("path") == missing_field for d in response.json().get("details", [])
+        )
+
+    @allure.title("POST /posts - title exceeds max length (200 chars)")
+    def test_create_post_title_too_long(self, api_client: MockApiClient):
+        payload = _post_payload()
+        payload["title"] = random_name(201)
+        response = api_client.create_post(payload)
+        assert response.status_code == 400
+
+    @allure.title("POST /posts - body exceeds max length (5000 chars)")
+    def test_create_post_body_too_long(self, api_client: MockApiClient):
+        payload = _post_payload()
+        payload["body"] = random_name(5001)
+        response = api_client.create_post(payload)
+        assert response.status_code == 400
+
 
 @allure.suite("Posts API")
 class TestUpdatePost:
@@ -107,6 +135,44 @@ class TestUpdatePost:
             {"title": new_title, "body": created_post["body"]},
         )
         assert api_client.data(response)["title"] == new_title
+
+
+@allure.suite("Posts API")
+class TestPatchPost:
+    @allure.title(
+        "PATCH /posts/{id} - partial update (Expected to fail due to API bug)"
+    )
+    @pytest.mark.xfail(
+        reason="Bug on apimocker.com: PATCH acts like PUT and requires all fields"
+    )
+    def test_patch_post_partial_update(
+        self, api_client: MockApiClient, created_post: dict
+    ):
+        new_title = f"Patched Title {uuid.uuid4().hex[:8]}"
+        # Try to update title only
+        response = api_client.patch_post(created_post["id"], {"title": new_title})
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code} with body: {response.text}"
+        )
+
+    @allure.title("PATCH /posts/{id} - works when all required fields are provided")
+    def test_patch_post_full_payload(
+        self, api_client: MockApiClient, created_post: dict
+    ):
+        new_title = f"Patched Title {uuid.uuid4().hex[:8]}"
+        payload = {"title": new_title, "body": created_post["body"]}
+        response = api_client.patch_post(created_post["id"], payload)
+
+        if response.status_code == 404:
+            pytest.xfail(
+                "Bug on apimocker.com: PATCH returns 404 despite documentation"
+            )
+
+        assert response.status_code == 200
+        post = api_client.data(response)
+        assert post["title"] == new_title
+        assert post["body"] == created_post["body"]
 
 
 @allure.suite("Posts API")

@@ -3,6 +3,7 @@ import pytest
 import allure
 
 from api.mock_api_client import MockApiClient
+from helpers import random_name
 
 
 def _todo_payload() -> dict:
@@ -91,6 +92,18 @@ class TestCreateTodo:
         response = api_client.create_todo(_todo_payload())
         assert "id" in api_client.data(response)
 
+    @allure.title("POST /todos - missing title")
+    def test_create_todo_missing_title(self, api_client: MockApiClient):
+        response = api_client.create_todo({})
+        assert response.status_code == 400
+        assert any(d.get("path") == "title" for d in response.json().get("details", []))
+
+    @allure.title("POST /todos - title exceeds max length (200 chars)")
+    def test_create_todo_title_too_long(self, api_client: MockApiClient):
+        payload = {"title": random_name(201)}
+        response = api_client.create_todo(payload)
+        assert response.status_code == 400
+
 
 @allure.suite("Todos API")
 class TestUpdateTodo:
@@ -111,6 +124,45 @@ class TestUpdateTodo:
             {"title": created_todo["title"], "completed": True},
         )
         assert api_client.data(response)["completed"] is True
+
+
+@allure.suite("Todos API")
+class TestPatchTodo:
+    @allure.title(
+        "PATCH /todos/{id} - partial update (Expected to fail due to API bug)"
+    )
+    @pytest.mark.xfail(
+        reason="Bug on apimocker.com: PATCH acts like PUT and requires all fields"
+    )
+    def test_patch_todo_status(self, api_client: MockApiClient, created_todo: dict):
+        response = api_client.patch_todo(created_todo["id"], {"completed": True})
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code} with body: {response.text}"
+        )
+
+        assert response.status_code == 200
+        todo = api_client.data(response)
+        assert todo["completed"] is True
+        assert todo["title"] == created_todo["title"]
+
+    @allure.title("PATCH /posts/{id} - works when all required fields are provided")
+    def test_patch_todo_full_payload(
+        self, api_client: MockApiClient, created_todo: dict
+    ):
+        new_title = f"Patched Title {uuid.uuid4().hex[:8]}"
+        payload = {"title": new_title, "completed": created_todo["completed"]}
+        response = api_client.patch_todo(created_todo["id"], payload)
+
+        if response.status_code == 404:
+            pytest.xfail(
+                "Bug on apimocker.com: PATCH returns 404 despite documentation"
+            )
+
+        assert response.status_code == 200
+        post = api_client.data(response)
+        assert post["title"] == new_title
+        assert post["completed"] == created_todo["completed"]
 
 
 @allure.suite("Todos API")

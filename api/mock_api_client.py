@@ -34,6 +34,12 @@ class MockApiClient(BaseClient):
     ) -> requests.Response:
         return self.put(Endpoints.user(user_id), json=payload)
 
+    @api_step("PATCH /users/{id} — partially update user by ID")
+    def patch_user(
+        self, user_id: int | str, payload: dict[str, Any]
+    ) -> requests.Response:
+        return self.patch(Endpoints.user(user_id), json=payload)
+
     @api_step("DELETE /users/{id} — remove user by ID")
     def delete_user(self, user_id: int | str) -> requests.Response:
         return self.delete(Endpoints.user(user_id))
@@ -57,6 +63,12 @@ class MockApiClient(BaseClient):
         self, post_id: int | str, payload: dict[str, Any]
     ) -> requests.Response:
         return self.put(Endpoints.post(post_id), json=payload)
+
+    @api_step("PATCH /posts/{id} — partially update post by ID")
+    def patch_post(
+        self, post_id: int | str, payload: dict[str, Any]
+    ) -> requests.Response:
+        return self.patch(Endpoints.post(post_id), json=payload)
 
     @api_step("DELETE /posts/{id} — remove post by ID")
     def delete_post(self, post_id: int | str) -> requests.Response:
@@ -82,6 +94,12 @@ class MockApiClient(BaseClient):
     ) -> requests.Response:
         return self.put(Endpoints.todo(todo_id), json=payload)
 
+    @api_step("PATCH /todos/{id} — partially update todo by ID")
+    def patch_todo(
+        self, todo_id: int | str, payload: dict[str, Any]
+    ) -> requests.Response:
+        return self.patch(Endpoints.todo(todo_id), json=payload)
+
     @api_step("DELETE /todos/{id} — remove todo by ID")
     def delete_todo(self, todo_id: int | str) -> requests.Response:
         return self.delete(Endpoints.todo(todo_id))
@@ -106,6 +124,21 @@ class MockApiClient(BaseClient):
     ) -> requests.Response:
         return self.put(Endpoints.comment(comment_id), json=payload)
 
+    @api_step("PATCH /comment/{id} - partially update comment by ID")
+    def patch_comment(
+        self, comment_id: int | str, payload: dict[str, Any]
+    ) -> requests.Response:
+        return self.patch(Endpoints.comment(comment_id), json=payload)
+
     @api_step("DELETE /comments/{id} — remove comment by ID")
     def delete_comment(self, comment_id: int | str) -> requests.Response:
         return self.delete(Endpoints.comment(comment_id))
+
+    # ADVANCED FEATURES
+    @api_step("GET /users/search — search users")
+    def search_users(self, query: str) -> requests.Response:
+        return self.get(f"{Endpoints.USERS}/search", params={"q": query})
+
+    @api_step("GET /error/{code} — simulate error")
+    def get_error(self, code: int | str) -> requests.Response:
+        return self.get(f"/error/{code}")

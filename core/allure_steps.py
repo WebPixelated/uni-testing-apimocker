@@ -5,7 +5,6 @@ from typing import Any, Callable
 import allure
 from core.logger import logger
 
-
 # Attachment helpers
 
 
