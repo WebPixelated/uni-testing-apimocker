@@ -66,17 +66,14 @@ testingapi/
 
 ```bash
 # 1. Клонировать репозиторий
-git clone https://github.com/<your-username>/testingapi.git
+git clone https://github.com/WebPixelated/testingapi.git
 cd testingapi
 
 # 2. Установить зависимости
 poetry install
 
-# 3. Установить браузеры Playwright
-poetry run playwright install chromium
-
-# 4. Создать .env из примера
-cp .env.example .env
+# 3. Создать .env файл
+Конфигурация описана ниже в README файле
 ```
 
 ---
